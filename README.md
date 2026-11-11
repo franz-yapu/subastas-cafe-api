@@ -1,9 +1,8 @@
 # Subasta de café — API
 
 Backend de una **plataforma de subastas en línea de café de especialidad** con pujas en tiempo real.
-Pensada para instituciones que subastan lotes de café de productores: el administrador publica los
-lotes, los compradores pujan en vivo desde el navegador, y al cerrar el sistema adjudica, notifica
-por correo y registra la transacción.
+El administrador publica los lotes, los compradores pujan en vivo desde el navegador, y al cerrar el
+sistema adjudica, notifica por correo y registra la transacción.
 
 Interfaz web (Angular): [`franz-yapu/frontend-c`](https://github.com/franz-yapu/frontend-c)
 
@@ -15,7 +14,7 @@ Interfaz web (Angular): [`franz-yapu/frontend-c`](https://github.com/franz-yapu/
   lote al ganador, sin que nadie tenga que estar presente.
 - **Anti-sniping.** Si entra una puja en los últimos minutos, el cierre se extiende (minutos y activación
   configurables por subasta).
-- **Marca blanca.** Cada institución configura sus colores, logo y textos desde un panel, sin tocar código.
+- **Marca blanca.** Colores, logo y textos se configuran desde un panel, sin tocar código.
 
 ## Características
 
@@ -105,8 +104,6 @@ test/         e2e y concurrencia
 ## Estado
 
 Versión **1.0.0** (etiqueta `v1.0.0`), desplegada con Coolify. Rama de trabajo actual: `main`.
-Otras ramas (`caritas`, `tecab`, `cafe-pro`, `version_1`, `dev`) conservan ediciones anteriores
-configuradas para instituciones concretas.
 
 ## Licencia
 
