@@ -1,110 +1,114 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Subasta de café — API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend de una **plataforma de subastas en línea de café de especialidad** con pujas en tiempo real.
+Pensada para instituciones que subastan lotes de café de productores: el administrador publica los
+lotes, los compradores pujan en vivo desde el navegador, y al cerrar el sistema adjudica, notifica
+por correo y registra la transacción.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Interfaz web (Angular): [`franz-yapu/frontend-c`](https://github.com/franz-yapu/frontend-c)
 
-## Description
+## Qué resuelve
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- **Pujas en vivo y justas.** Todos los compradores ven la puja más alta al instante (WebSockets) y
+  reciben aviso cuando alguien los supera.
+- **Cierre automático.** Un temporizador de servidor cierra la subasta a la hora fijada y adjudica cada
+  lote al ganador, sin que nadie tenga que estar presente.
+- **Anti-sniping.** Si entra una puja en los últimos minutos, el cierre se extiende (minutos y activación
+  configurables por subasta).
+- **Marca blanca.** Cada institución configura sus colores, logo y textos desde un panel, sin tocar código.
 
-## Project setup
+## Características
 
-```bash
-$ npm install
-```
+| Área | Qué hay |
+| --- | --- |
+| Tiempo real | Socket.io en el namespace `/bids`: salas por subasta, eventos `newBid`, `outbid`, `auctionExtended`, `auctionClosed`, cambios de lotes y de fecha de cierre |
+| Subastas | Estados de subasta, lotes de café con calidad y proceso, incremento mínimo, extensión automática, cierre programado (`@nestjs/schedule`) |
+| Pujas | Validación de monto mínimo, desempate determinista, advertencia de latencia alta al cliente |
+| Usuarios y roles | JWT con Passport; roles `ADMIN`, `BUYER`, `SELLER` (solo revisa) y `GUEST`; bitácora de acciones de usuario |
+| Correo | Nodemailer con plantillas HTML (bienvenida, restablecer contraseña) y avisos de subasta |
+| Notificaciones | Registro de tokens de push para la app móvil |
+| i18n | Español e inglés (`nestjs-i18n`), con textos editables desde el panel (*translation overrides*) |
+| Marca blanca | Módulo de branding con historial de cambios |
+| Documentación | Swagger en `/api` |
+| Validación | `class-validator` en todos los DTO |
 
-## Compile and run the project
+## Decisiones de diseño que vale la pena mirar
 
-```bash
-# development
-$ npm run start
+- **Sin doble adjudicación.** Las pujas a un mismo lote se serializan con un *advisory lock* de
+  PostgreSQL por lote. Dos pujas simultáneas nunca se aceptan a la vez.
+- **Desempate estable.** A igual monto gana siempre la primera en el tiempo
+  (`amount DESC, createdAt ASC, id ASC`).
+- **Una sola subasta activa, garantizado por la base de datos.** Un índice único parcial
+  (`one_active_auction`) lo impone a nivel de BD, no solo en la aplicación.
+- **Dinero en `Decimal(12,2)`**, nunca en flotantes.
+- **Índices a medida** para las consultas calientes (ganador/precio por lote y últimas pujas).
+- **Un solo origen del secreto JWT** compartido por la API REST y el gateway de WebSockets.
 
-# watch mode
-$ npm run start:dev
+## Stack
 
-# production mode
-$ npm run start:prod
-```
+NestJS 11 · TypeScript · Prisma 6 · PostgreSQL · Socket.io · Passport/JWT · Swagger ·
+nestjs-i18n · Nodemailer · `@nestjs/schedule` · Jest · Docker
 
-## Run tests
+## Puesta en marcha
 
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+Requisitos: Node 20+, PostgreSQL 15+.
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm install
+cp .env.example .env        # rellena DATABASE_URL y JWT_SECRET como mínimo
+npx prisma migrate deploy   # crea el esquema
+npx prisma db seed          # roles y datos de demostración
+npm run start:dev           # http://localhost:3000  ·  Swagger en /api
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Genera un `JWT_SECRET` fuerte (es **obligatorio en producción**):
 
-## Resources
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+### Con Docker
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+docker build -t subasta-backend .
+docker run --env-file .env -p 3000:3000 subasta-backend
+```
 
-## Support
+El contenedor se construye en dos etapas (build y runtime) con Node 20 Alpine.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Pruebas
 
-## Stay in touch
+```bash
+npm test                  # unitarias
+npm run test:e2e          # extremo a extremo
+RUN_CONCURRENCY_TEST=1 DATABASE_URL=<base de pruebas> npm run test:concurrency
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+La prueba de **concurrencia** corre contra un PostgreSQL real (sin mocks) y verifica el *advisory lock*
+y el desempate. Está desactivada por defecto para que nunca toque una base de producción por accidente.
 
-## License
+## Estructura
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```
+src/
+  auction/    subastas, temporizador y cierre automático
+  bid/        pujas (REST) y gateway de WebSockets
+  caffee-lot/ lotes de café
+  transaction/ adjudicaciones
+  users/ auth/ roles, JWT, bitácora
+  email/ notifications/ correo y push
+  branding/ translation/ i18n  marca blanca y textos
+prisma/       esquema, migraciones y seed
+test/         e2e y concurrencia
+```
 
+## Estado
 
-##  Paso inicial para crear la base de datos 
-    $ npx prisma migrate deploy
-##  Correr los datos iniciales 
-    $  npx prisma db seed
-##  Correr los cambios en prisma 
-    $ npx prisma migrate dev --name unnombreacordealcambio 
-##  Optinal para generar
-    $ npx prisma generate    
-##  Generar CRUD
-    $ nest generate resource name
+Versión **1.0.0** (etiqueta `v1.0.0`), desplegada con Coolify. Rama de trabajo actual: `main`.
+Otras ramas (`caritas`, `tecab`, `cafe-pro`, `version_1`, `dev`) conservan ediciones anteriores
+configuradas para instituciones concretas.
+
+## Licencia
+
+Todos los derechos reservados © Franz Yapu. El código se publica para que pueda revisarse;
+no se concede licencia de uso o redistribución sin autorización escrita.
