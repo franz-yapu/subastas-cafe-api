@@ -4,7 +4,7 @@ Backend de una **plataforma de subastas en línea de café de especialidad** con
 El administrador publica los lotes, los compradores pujan en vivo desde el navegador, y al cerrar el
 sistema adjudica, notifica por correo y registra la transacción.
 
-Interfaz web (Angular): [`franz-yapu/frontend-c`](https://github.com/franz-yapu/frontend-c)
+Interfaz web (Angular): [`franz-yapu/subastas-cafe-web`](https://github.com/franz-yapu/subastas-cafe-web)
 
 ## Qué resuelve
 
